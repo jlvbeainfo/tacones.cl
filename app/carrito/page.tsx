@@ -1,16 +1,19 @@
 'use client';
 import { useCart } from '@/context/CartContext';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState } from 'react';
 
 export default function CartPage() {
     const { cart, removeFromCart } = useCart();
     const [loadingCheckout, setLoadingCheckout] = useState(false);
+    const [checkoutError, setCheckoutError] = useState<string | null>(null);
     const total = cart.reduce((acc, item) => acc + (parseInt(item.price || '0') * item.quantity), 0);
 
     const handleCheckout = async () => {
         if (cart.length === 0 || loadingCheckout) return;
         setLoadingCheckout(true);
+        setCheckoutError(null);
 
         try {
             const res = await fetch('/api/checkout', {
@@ -24,13 +27,18 @@ export default function CartPage() {
                     })),
                 }),
             });
-            const data = await res.json();
-            if (data.checkoutUrl) {
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                setCheckoutError(data?.error || 'No se pudo conectar con el servidor de pagos. Intenta nuevamente.');
+                return;
+            }
+            if (data?.checkoutUrl) {
                 window.location.href = data.checkoutUrl;
                 return;
             }
+            setCheckoutError('No se recibió una URL de checkout válida.');
         } catch {
-            alert('No se pudo conectar con el servidor de pagos. Intenta nuevamente.');
+            setCheckoutError('No se pudo conectar con el servidor de pagos. Intenta nuevamente.');
         } finally {
             setLoadingCheckout(false);
         }
@@ -40,7 +48,7 @@ export default function CartPage() {
         return (
             <main className="max-w-4xl mx-auto p-16 text-center bg-white mt-12 border">
                 <h1 className="text-2xl font-bold mb-6 uppercase tracking-wide">Tu carrito está vacío</h1>
-                <a href="/" className="text-pink-600 font-bold hover:underline uppercase tracking-wider">Continuar comprando</a>
+                <Link href="/" className="text-pink-600 font-bold hover:underline uppercase tracking-wider">Continuar comprando</Link>
             </main>
         );
     }
@@ -90,6 +98,11 @@ export default function CartPage() {
                 <div className="text-lg text-gray-800 mb-6 uppercase font-bold">
                     Total Estimado: <span className="text-3xl ml-4 text-pink-600">${total.toLocaleString('es-CL')}</span>
                 </div>
+                {checkoutError && (
+                    <p className="text-red-600 text-sm font-medium mb-4 text-right">
+                        {checkoutError}
+                    </p>
+                )}
                 <button
                     onClick={handleCheckout}
                     disabled={loadingCheckout}

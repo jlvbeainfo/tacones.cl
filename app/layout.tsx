@@ -126,20 +126,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <ul className="space-y-3 text-sm">
                   <li>
                     <a
-                      href="https://api.whatsapp.com/send?phone=56979214151"
+                      href="https://api.whatsapp.com/send?phone=56984693207"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 hover:text-pink-400 transition-colors"
                     >
-                      <span className="text-green-400 font-bold">WhatsApp:</span> (+56) 9 7921 4151
+                      <span className="text-green-400 font-bold">WhatsApp:</span> (+56) 9 84693207
                     </a>
                   </li>
                   <li>
                     <a
-                      href="mailto:detacos.cl@gmail.com"
+                      href="mailto:ventas@taconesonline.cl"
                       className="hover:text-pink-400 transition-colors"
                     >
-                      Email: detacos.cl@gmail.com
+                      Email: ventas@taconesonline.cl
                     </a>
                   </li>
                   <li className="text-gray-400">Disponible los 365 días del año.</li>
@@ -153,7 +153,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </h3>
                 <div className="flex items-center gap-4 mb-6">
                   <a
-                    href="https://www.instagram.com/detacos.cl/?hl=es"
+                    href="https://www.instagram.com/tacones.cl/?hl=es"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Instagram"
@@ -164,7 +164,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     </svg>
                   </a>
                   <a
-                    href="https://www.facebook.com/detacos.cl"
+                    href="https://www.facebook.com/tacones.cl"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Facebook"
@@ -175,7 +175,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     </svg>
                   </a>
                   <a
-                    href="https://api.whatsapp.com/send?phone=56979214151"
+                    href="https://api.whatsapp.com/send?phone=56984693207"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="WhatsApp"
@@ -193,7 +193,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
 
             <div className="border-t border-gray-800 py-6 text-center text-xs text-gray-500">
-              © {new Date().getFullYear()} Tacones.cl — Todos los derechos reservados.
+              © {new Date().getFullYear()} Tacones.cl — Todos los derechos reservados. Desarrollado por EAINFO SpA
             </div>
           </footer>
         </CartProvider>

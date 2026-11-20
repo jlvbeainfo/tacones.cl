@@ -44,13 +44,44 @@ export interface Shoe {
     meta_data?: { id: number; key: string; value: unknown }[];
 }
 
-const credentials = btoa(`${process.env.WOOCOMMERCE_CONSUMER_KEY}:${process.env.WOOCOMMERCE_CONSUMER_SECRET}`);
+const credentials = Buffer.from(
+    `${process.env.WOOCOMMERCE_CONSUMER_KEY || ''}:${process.env.WOOCOMMERCE_CONSUMER_SECRET || ''}`
+).toString('base64');
 const headers = { Authorization: `Basic ${credentials}`, 'Content-Type': 'application/json' };
 
-const wpOrigin = (
-    process.env.NEXT_PUBLIC_WORDPRESS_URL ||
-    (process.env.WOOCOMMERCE_API_URL ? new URL(process.env.WOOCOMMERCE_API_URL).origin : '')
-).replace(/\/$/, '');
+const wpOrigin = (() => {
+    try {
+        const raw =
+            process.env.NEXT_PUBLIC_WORDPRESS_URL ||
+            (process.env.WOOCOMMERCE_API_URL ? new URL(process.env.WOOCOMMERCE_API_URL).origin : '');
+        return raw.replace(/\/$/, '');
+    } catch {
+        return '';
+    }
+})();
+
+async function wcFetch(path: string, init?: RequestInit & { next?: { revalidate?: number } }): Promise<Response | null> {
+    const apiUrl = (process.env.WOOCOMMERCE_API_URL || '').replace(/\/$/, '');
+    if (!apiUrl) {
+        console.error('[WooCommerce] WOOCOMMERCE_API_URL no está configurada.');
+        return null;
+    }
+
+    try {
+        const res = await fetch(`${apiUrl}${path}`, {
+            headers,
+            ...init,
+        });
+        if (!res.ok) {
+            console.error(`[WooCommerce] Error ${res.status} en ${apiUrl}${path}`);
+            return null;
+        }
+        return res;
+    } catch (error) {
+        console.error(`[WooCommerce] Error de red en ${apiUrl}${path}:`, error);
+        return null;
+    }
+}
 
 function maskUrl(text: string): string {
     if (!text || !wpOrigin) return text;
@@ -107,11 +138,10 @@ export async function getProducts(options?: { categoryId?: number; search?: stri
             params.set('category', String(options.categoryId));
         }
 
-        const res = await fetch(`${process.env.WOOCOMMERCE_API_URL}/products?${params.toString()}`, {
-            headers,
+        const res = await wcFetch(`/products?${params.toString()}`, {
             next: { revalidate: 3600 },
         });
-        if (!res.ok) return [];
+        if (!res) return [];
         const allProducts: Shoe[] = await res.json();
         if (!Array.isArray(allProducts)) return [];
 
@@ -151,43 +181,43 @@ export async function getProducts(options?: { categoryId?: number; search?: stri
         params.set('category', String(options.categoryId));
     }
 
-    const res = await fetch(`${process.env.WOOCOMMERCE_API_URL}/products?${params.toString()}`, {
-        headers,
+    const res = await wcFetch(`/products?${params.toString()}`, {
         next: { revalidate: 3600 },
     });
-    if (!res.ok) return [];
+    if (!res) return [];
     const data = await res.json();
     return Array.isArray(data) ? data.map(maskProductUrls) : [];
 }
 
 export async function getProductBySlug(slug: string): Promise<Shoe | null> {
     if (!slug) return null;
-    const res = await fetch(`${process.env.WOOCOMMERCE_API_URL}/products?slug=${encodeURIComponent(slug)}`, {
-        headers,
+    const res = await wcFetch(`/products?slug=${encodeURIComponent(slug)}`, {
         next: { revalidate: 3600 },
     });
-    if (!res.ok) return null;
+    if (!res) return null;
     const data = await res.json();
     const product = Array.isArray(data) ? data[0] || null : null;
     return product ? maskProductUrls(product) : null;
 }
 
-export async function getProductVariations(productId: number): Promise<ShoeVariation[]> {
-    const res = await fetch(`${process.env.WOOCOMMERCE_API_URL}/products/${productId}/variations?per_page=50`, {
-        headers,
-        next: { revalidate: 3600 },
-    });
-    if (!res.ok) return [];
+export async function getProductVariations(
+    productId: number,
+    options?: { noStore?: boolean }
+): Promise<ShoeVariation[]> {
+    const res = await wcFetch(
+        `/products/${productId}/variations?per_page=50`,
+        options?.noStore ? { cache: 'no-store' } : { next: { revalidate: 3600 } }
+    );
+    if (!res) return [];
     const data = await res.json();
     return Array.isArray(data) ? data : [];
 }
 
 export async function getCategories(): Promise<ProductCategory[]> {
-    const res = await fetch(`${process.env.WOOCOMMERCE_API_URL}/products/categories?per_page=50&hide_empty=false`, {
-        headers,
+    const res = await wcFetch(`/products/categories?per_page=50&hide_empty=false`, {
         next: { revalidate: 60 },
     });
-    if (!res.ok) return [];
+    if (!res) return [];
     const data = await res.json();
     const excludedSlugs = new Set(['uncategorized', 'sin-categorizar', 'coleccion-primavera-verano-2023']);
     const preferredOrder = ['zapatos', 'sandalias', 'botines', 'botas'];
