@@ -4,6 +4,7 @@ const wpUrl = process.env.NEXT_PUBLIC_WORDPRESS_URL || process.env.WOOCOMMERCE_A
 const wpHostname = new URL(wpUrl).hostname;
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   poweredByHeader: false,
   images: {
     dangerouslyAllowLocalIP: true,
